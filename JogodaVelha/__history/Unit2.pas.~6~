@@ -1,0 +1,92 @@
+unit Unit2;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls;
+
+type
+  TForm2 = class(TForm)
+    eGen: TEdit;
+    eNome: TEdit;
+    lCodPlay: TLabel;
+    Label2: TLabel;
+    Button1: TButton;
+    bStart: TButton;
+    Label1: TLabel;
+    Label3: TLabel;
+    Panel1: TPanel;
+    procedure Button1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    function ValidarExist(const Usuario: string): Boolean;
+    procedure bStartClick(Sender: TObject);
+
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+
+end;
+
+var
+  Form2: TForm2;
+
+implementation
+
+{$R *.dfm}
+
+uses Unit1;
+
+function TForm2.ValidarExist(const Usuario: string): Boolean;
+begin
+   Result := False;
+   try
+      Form1.qGrava.SQL.Text := 'SELECT * FROM PLAYERS WHERE NOME = :Usuario';
+      Form1.qGrava.Params.ParamByName('Usuario').AsString := Usuario;
+      Form1.qGrava.Open;
+      //label1.Caption := Form1.qGrava.Params.ParamByName('Usuario').AsString;
+      Result := not Form1.qGrava.IsEmpty;
+   except
+      on E: Exception do
+      ShowMessage('Erro: ' + E.Message);
+   end;
+end;
+
+procedure TForm2.bStartClick(Sender: TObject);
+begin
+form1.ShowModal;
+end;
+
+procedure TForm2.Button1Click(Sender: TObject);
+begin
+  if ValidarExist(eNome.Text) then ShowMessage('Usuário já este!')
+  else
+  begin
+    Form1.qGrava.SQL.Clear;
+    Form1.qGrava.SQL.Add('insert into players (nome, vitorias, derrotas, empates) '+
+                         'values ('''+eNome.text+''', ' +
+                         '0, ' +
+                         '0, ' +
+                         '0);');
+    Form1.qGrava.ExecSQL;
+    ShowMessage('Cadastro realizado com sucesso!');
+    form1.qSelectP1.Refresh;
+    form1.qSelectP2.Refresh;
+  end;
+end;
+
+procedure TForm2.FormCreate(Sender: TObject);
+var
+Vari : integer;
+begin
+    Form1.qSelect.SQL.Text := 'SELECT GEN_ID(CODPLAYSEQ, 0) FROM RDB$DATABASE';
+    Form1.qSelect.Open;
+    Vari:= Form1.qSelect.Fields[0].AsInteger;
+
+    // Agora você pode usar o ValorAtual conforme necessário
+    eGen.Text:= IntToStr(Vari);
+
+end;
+
+end.

@@ -1,0 +1,623 @@
+unit Unit1;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls,
+  Vcl.Imaging.pngimage, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Error, FireDAC.UI.Intf, FireDAC.Phys.Intf, FireDAC.Stan.Def,
+  FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys, FireDAC.Phys.FB,
+  FireDAC.Phys.FBDef, FireDAC.VCLUI.Wait, FireDAC.Stan.Param, FireDAC.DatS,
+  FireDAC.DApt.Intf, FireDAC.DApt, Data.DB, FireDAC.Comp.DataSet,
+  FireDAC.Comp.Client, Vcl.DBCtrls, FireDAC.VCLUI.Script, FireDAC.Comp.UI,
+  Vcl.MPlayer, Vcl.ComCtrls, Vcl.Grids, Vcl.DBGrids;
+
+type
+  TForm1 = class(TForm)
+    Panel1: TPanel;
+    Label1: TLabel;
+    iTurno: TImage;
+    iVazio: TImage;
+    iX: TImage;
+    iO: TImage;
+    lTurno: TLabel;
+    bReset: TButton;
+    tTempo: TTimer;
+    lbSeg: TLabel;
+    lbMin: TLabel;
+    Label3: TLabel;
+    lbsegfix: TLabel;
+    qPartidas: TFDQuery;
+    qJogadas: TFDQuery;
+    gen_codpart: TLabel;
+    qsCodpartGEN: TFDQuery;
+    PageControl1: TPageControl;
+    Jogo: TTabSheet;
+    Estatística: TTabSheet;
+    ComboBoxO: TDBLookupComboBox;
+    ComboBoxX: TDBLookupComboBox;
+    lPlayerO: TLabel;
+    lPlayerX: TLabel;
+    placarO: TLabel;
+    placarX: TLabel;
+    VS: TLabel;
+    DBGrid1: TDBGrid;
+    qsDados: TFDQuery;
+    dsDados: TDataSource;
+    Replay: TButton;
+    qsReplay: TFDQuery;
+    jogadatal: TLabel;
+    ltempo: TLabel;
+    Label2: TLabel;
+    lCodigoPart: TLabel;
+    DBGrid2: TDBGrid;
+    dsReplay: TDataSource;
+    tReplay: TTimer;
+    bParar: TButton;
+    qsResultado: TFDQuery;
+    Button1: TButton;
+    bNext: TButton;
+    lJogada: TLabel;
+    eof: TButton;
+    Image1: TImage;
+    Image2: TImage;
+    Image3: TImage;
+    Image6: TImage;
+    Image5: TImage;
+    Image4: TImage;
+    Image7: TImage;
+    Image8: TImage;
+    Image9: TImage;
+    procedure Image1Click(Sender: TObject);
+    procedure PassaTurno();
+    procedure PassaTurnoReplay();
+    function  ChecaVitoria(Opcao: String): Boolean;
+    procedure Jogar(var ini: boolean; img: TImage);
+    procedure Image2Click(Sender: TObject);
+    procedure Image3Click(Sender: TObject);
+    procedure Image4Click(Sender: TObject);
+    procedure Image5Click(Sender: TObject);
+    procedure Image6Click(Sender: TObject);
+    procedure Image7Click(Sender: TObject);
+    procedure Image8Click(Sender: TObject);
+    procedure Image9Click(Sender: TObject);
+    procedure Resetar();
+    procedure bResetClick(Sender: TObject);
+    procedure ComboBoxXClick(Sender: TObject);
+    procedure ComboBoxOClick(Sender: TObject);
+    procedure tTempoTimer(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure DBGrid1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure DBGrid1CellClick(Column: TColumn);
+    procedure ReplayClick(Sender: TObject);
+    procedure DesabilitaIMGs();
+    procedure AbilitaIMGs();
+    procedure LerResultado();
+    procedure LerJogada();
+    procedure EstatísticaEnter(Sender: TObject);
+    procedure JogoEnter(Sender: TObject);
+    procedure tReplayTimer(Sender: TObject);
+    procedure ExecJogada();
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure bPararClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure bNextClick(Sender: TObject);
+    procedure TestaFim();
+    procedure eofClick(Sender: TObject);
+    procedure ReplayJogo();
+
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+   Form1: TForm1;
+   Tempo, decafix, Turno, pX, pO, genpart, jogada, jogvar: integer;
+   in1, in2, in3, in4, in5, in6, in7, in8, in9: boolean;
+   Valor, Resultado: string;
+   decacont: Integer = 0;
+
+implementation
+
+{$R *.dfm}
+
+uses Unit2;
+
+procedure TForm1.FormShow(Sender: TObject);
+begin
+decafix:= 0;
+Turno:= 1;
+lTurno.Caption := 'Turno nº ' + IntToStr(Turno);
+ComboBoxX.KeyValue:= 'GUEST 1';
+ComboBoxO.KeyValue:= 'GUEST 2';
+qsCodpartGEN.SQL.Text := 'SELECT GEN_ID(CODPARTSEQ, 1) FROM RDB$DATABASE';
+qsCodpartGEN.Open;
+genpart:= qsCodpartGEN.Fields[0].AsInteger;
+gen_codpart.caption:= IntToStr(genpart);
+qPartidas.SQL.Text:='insert into PARTIDAS ' +
+                    '(codpart) ' +
+                    'values ('''+IntToStr(genpart)+''')';
+qPartidas.ExecSQL;
+end;
+
+procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+form2.Close;
+end;
+
+procedure TForm1.DesabilitaIMGs();
+begin
+Image1.Enabled:= False;
+Image2.Enabled:= False;
+Image3.Enabled:= False;
+Image4.Enabled:= False;
+Image5.Enabled:= False;
+Image6.Enabled:= False;
+Image7.Enabled:= False;
+Image8.Enabled:= False;
+Image9.Enabled:= False;
+end;
+
+procedure TForm1.TestaFim();
+begin
+if qsReplay.Eof then
+showmessage('X');
+end;
+
+procedure TForm1.eofClick(Sender: TObject);
+begin
+TestaFim();
+end;
+
+procedure TForm1.AbilitaIMGs();
+begin
+Image1.Enabled:= False;
+Image2.Enabled:= False;
+Image3.Enabled:= False;
+Image4.Enabled:= False;
+Image5.Enabled:= False;
+Image6.Enabled:= False;
+Image7.Enabled:= False;
+Image8.Enabled:= False;
+Image9.Enabled:= False;
+end;
+
+procedure TForm1.Jogar(var ini: boolean; img: TImage);
+begin
+   if ini = false then
+      begin
+      if tTempo.Enabled = false then
+         tTempo.Enabled := true;
+      ini := true;
+      img.Picture := iTurno.Picture;
+      img.HelpKeyword := iTurno.HelpKeyword;
+      qJogadas.SQL.Text:='insert into JOGADAS (codpart, ' +
+                                              'Turno, ' +
+                                              'Jogada,' +
+                                              'Tempo, ' +
+                                              'Vez) ' +
+                                              'values ('''+inttostr(genpart)+''', ' +
+                                              ''''+IntToStr(Turno)+''', ' +
+                                              ''''+IntToStr(jogada)+''', ' +
+                                              ''''+inttostr(decafix)+''', ' +
+                                              ''''+iTurno.HelpKeyword+''')' ;
+      qJogadas.ExecSQL;
+      if ChecaVitoria(iTurno.HelpKeyword) = false then
+         PassaTurno();
+      end
+   else
+      ShowMessage('ja jogou');
+end;
+
+procedure TForm1.PassaTurno();
+begin
+Turno := Turno + 1;
+   if Turno = 10 then
+   begin
+      ShowMessage('EMPATE');
+      Resetar();
+      Form2.qGrava.SQL.Text:=  'UPDATE PLAYERS ' +
+                               'SET EMPATES = EMPATES + 1 ' +
+                               'WHERE ' +
+                               'NOME = '''+ComboBoxX.KeyValue+''' OR ' +
+                               'NOME = '''+ComboBoxO.KeyValue+''' ';
+      Form2.qGrava.ExecSQL;
+   end;
+lTurno.Caption := 'Turno nº ' + IntToStr(Turno);
+   if Turno mod 2 > 0 then
+      begin
+      iTurno.Picture := iX.Picture;
+      iTurno.HelpKeyword := 'X';
+      end
+   else
+      begin
+      iTurno.Picture := iO.Picture;
+      iTurno.HelpKeyword := 'O';
+      end;
+end;
+
+procedure TForm1.Resetar();
+var
+   i: Integer;
+   Imagem: TImage;
+begin
+   iTurno.HelpKeyword := 'X';
+   Turno := 1;
+   lTurno.Caption := 'Turno nº ' + IntToStr(Turno);
+   iTurno.Picture:= iX.Picture;
+   placarX.Caption:= IntToStr(pX);
+   placarO.Caption:= IntToStr(pO);
+   lbSeg.Caption:= '0';
+   lbMin.Caption:= '0';
+   tTempo.Enabled:= false;
+   decafix:= 0;
+   qsCodpartGEN.SQL.Text:='SELECT GEN_ID("CODPARTSEQ", 1) FROM RDB$DATABASE';
+   qsCodpartGEN.Open;
+   genpart:= qsCodpartGEN.Fields[0].AsInteger;
+   gen_codpart.caption:= IntToStr(genpart);
+   qPartidas.SQL.Text:='insert into PARTIDAS ' +
+                       '(codpart) ' +
+                       'values ('''+IntToStr(genpart)+''')';
+   qPartidas.ExecSQL;
+   for i := 1 to 9 do
+   begin
+      Imagem := TImage(FindComponent('Image' + IntToStr(i)));
+      Imagem.Picture := iVazio.Picture;
+      Imagem.HelpKeyword := '';
+   end;
+   in1 := false;
+   in2 := false;
+   in3 := false;
+   in4 := false;
+   in5 := false;
+   in6 := false;
+   in7 := false;
+   in8 := false;
+   in9 := false;
+   tReplay.Enabled:= false;
+end;
+
+function  TForm1.ChecaVitoria(Opcao: String): Boolean;
+begin
+   Result := False;
+   if (Image1.HelpKeyword = Opcao) and (Image2.HelpKeyword = Opcao) and (Image3.HelpKeyword = Opcao) or
+      (Image4.HelpKeyword = Opcao) and (Image5.HelpKeyword = Opcao) and (Image6.HelpKeyword = Opcao) or
+      (Image7.HelpKeyword = Opcao) and (Image8.HelpKeyword = Opcao) and (Image9.HelpKeyword = Opcao) or
+      (Image1.HelpKeyword = Opcao) and (Image4.HelpKeyword = Opcao) and (Image7.HelpKeyword = Opcao) or
+      (Image2.HelpKeyword = Opcao) and (Image5.HelpKeyword = Opcao) and (Image8.HelpKeyword = Opcao) or
+      (Image3.HelpKeyword = Opcao) and (Image6.HelpKeyword = Opcao) and (Image9.HelpKeyword = Opcao) or
+      (Image1.HelpKeyword = Opcao) and (Image5.HelpKeyword = Opcao) and (Image9.HelpKeyword = Opcao) or
+      (Image3.HelpKeyword = Opcao) and (Image5.HelpKeyword = Opcao) and (Image7.HelpKeyword = Opcao) then
+      begin
+      Result := True;
+      tTempo.Enabled:=false;
+      Showmessage('Parabéns, '+Opcao+' venceu!');
+      qPartidas.SQL.Text := 'UPDATE PARTIDAS SET ' +
+                            'PX = ''' + ComboBoxX.KeyValue + ''', ' +
+                            'PO = ''' + ComboBoxO.KeyValue + ''', ' +
+                            'DIA = CAST(''' + FormatDateTime('DD.MM.YYYY', Date()) + ''' AS DATE), ' +
+                            'RESULTADO = ''' + Opcao + ''' ' +
+                            'WHERE CODPART = ' + IntToStr(genpart);
+      qPartidas.ExecSQL;
+         if Opcao = 'X' then
+         begin
+            pX:= pX + 1;
+            Form2.qGrava.SQL.Text:= 'UPDATE PLAYERS ' +
+                              'SET VITORIAS = VITORIAS + 1 ' +
+                              'WHERE ' +
+                              'NOME = '''+ComboBoxX.KeyValue+''' ';
+            Form2.qGrava.ExecSQL;
+            Form2.qGrava.SQL.Text:= 'UPDATE PLAYERS ' +
+                              'SET DERROTAS = DERROTAS + 1 ' +
+                              'WHERE ' +
+                              'NOME = '''+ComboBoxO.KeyValue+''' ';
+            Form2.qGrava.ExecSQL;
+         end
+         else if Opcao = 'O' then
+            begin
+               pO:= pO + 1;
+               Form2.qGrava.SQL.Text:= 'UPDATE PLAYERS ' +
+                                'SET VITORIAS = VITORIAS + 1 ' +
+                                'WHERE ' +
+                                'NOME = '''+ComboBoxO.KeyValue+''' ';
+               Form2.qGrava.ExecSQL;
+               Form2.qGrava.SQL.Text:= 'UPDATE PLAYERS ' +
+                                'SET DERROTAS = DERROTAS + 1 ' +
+                                'WHERE ' +
+                                'NOME = '''+ComboBoxX.KeyValue+''' ';
+               Form2.qGrava.ExecSQL;
+            end;
+      Resetar();
+      end
+end;
+
+procedure TForm1.ComboBoxXClick(Sender: TObject);
+begin
+   if ComboBoxX.KeyValue = ComboBoxO.KeyValue then
+   begin
+     ShowMessage('Jogador X e Jogador O precisam ser diferentes!');
+     ComboBoxX.KeyValue:= 'GUEST 1';
+     ComboBoxO.KeyValue:= 'GUEST 2';
+   end;
+end;
+
+procedure TForm1.ComboBoxOClick(Sender: TObject);
+begin
+   if ComboBoxX.KeyValue = ComboBoxO.KeyValue then
+   begin
+     ShowMessage('Jogador X e Jogador O precisam ser diferentes!');
+     ComboBoxO.KeyValue:= 'GUEST 2';
+     ComboBoxO.KeyValue:= 'GUEST 1';
+   end;
+end;
+
+procedure TForm1.tTempoTimer(Sender: TObject);
+var
+   seg, min, conts, contm: integer;
+begin
+   if tReplay.Enabled = true then
+       tReplay.Enabled:= false;
+   //Decasegundos fixo para usar no BD
+   decafix:= decafix + 100;
+   lbsegfix.Caption:= inttostr(decafix);
+   seg := StrToInt(lbSeg.Caption);
+   min := StrToInt(lbMin.Caption);
+
+   if decacont = 1000 then
+      begin
+      decacont := 0;
+      seg:= seg+1;
+      lbSeg.Caption:= IntToStr(seg);
+      end;
+   if seg = 60 then
+      begin
+      conts:= 0;
+      lbSeg.Caption:= IntToStr(conts);
+      contm:= min+1;
+      lbMin.Caption:= IntToStr(contm);
+      end;
+end;
+
+procedure TForm1.bResetClick(Sender: TObject);
+begin
+pX:= 0;
+pO:= 0;
+Resetar();
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+LerResultado;
+LerJogada();
+end;
+
+procedure TForm1.Image1Click(Sender: TObject);
+begin
+jogada := 1;
+Jogar(in1, Image1);
+end;
+
+procedure TForm1.Image2Click(Sender: TObject);
+begin
+jogada := 2;
+Jogar(in2,Image2);
+end;
+
+procedure TForm1.Image3Click(Sender: TObject);
+begin
+jogada := 3;
+Jogar(in3,Image3);
+end;
+
+procedure TForm1.Image4Click(Sender: TObject);
+begin
+jogada := 4;
+Jogar(in4,Image4);
+end;
+
+procedure TForm1.Image5Click(Sender: TObject);
+begin
+jogada := 5;
+Jogar(in5,Image5);
+end;
+
+procedure TForm1.Image6Click(Sender: TObject);
+begin
+jogada := 6;
+Jogar(in6,Image6);
+end;
+
+procedure TForm1.Image7Click(Sender: TObject);
+begin
+jogada := 7;
+Jogar(in7,Image7);
+end;
+
+procedure TForm1.Image8Click(Sender: TObject);
+begin
+jogada := 8;
+Jogar(in8,Image8);
+end;
+
+procedure TForm1.Image9Click(Sender: TObject);
+begin
+jogada := 9;
+Jogar(in9,Image9);
+end;
+
+procedure TForm1.JogoEnter(Sender: TObject);
+begin
+qsDados.Refresh;
+end;
+
+procedure TForm1.EstatísticaEnter(Sender: TObject);
+begin
+qsDados.Refresh;
+if tTempo.Enabled = true then Resetar();
+end;
+
+procedure TForm1.DBGrid1CellClick(Column: TColumn);
+begin
+   Valor := VarToStr(qsDados.FieldByName('CODpart').Value);
+   lCodigoPart.caption := Valor;
+end;
+
+procedure TForm1.DBGrid1KeyUp(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+   Valor := VarToStr(qsDados.FieldByName('CODpart').Value);
+   lCodigoPart.caption := Valor;
+end;
+
+
+
+procedure TForm1.ReplayClick(Sender: TObject);
+begin
+LerResultado();
+LerJogada();
+PageControl1.ActivePage := Jogo;
+ReplayJogo();
+{
+LerResultado();
+LerJogada();
+Tempo:= qsReplay.Fields[1].AsInteger;
+lTempo.Caption:= IntToStr(Tempo);
+Jogada:= qsReplay.Fields[0].AsInteger;
+lJogada.Caption:= InttoStr(Jogada);
+//disable geral
+ComboBoxX.Enabled:= False;
+ComboBoxO.Enabled:= False;
+bReset.Enabled:= False;
+DesabilitaIMGs();
+PageControl1.ActivePage := Jogo;
+//começa
+tReplay.Enabled:= True;
+}
+end;
+
+procedure TForm1.PassaTurnoReplay();
+begin
+   Turno := Turno + 1;
+   lTurno.Caption := 'Turno nº ' + IntToStr(Turno);
+   if Turno mod 2 > 0 then
+   begin
+      iTurno.Picture := iX.Picture;
+      iTurno.HelpKeyword := 'X';
+   end
+   else
+   begin
+      iTurno.Picture := iO.Picture;
+      iTurno.HelpKeyword := 'O';
+   end;
+end;
+
+procedure TForm1.bNextClick(Sender: TObject);
+begin
+qsReplay.Next;
+{if qsReplay.Eof then  showmessage('Resultado: '+Resultado+'');
+Tempo:= qsReplay.Fields[1].AsInteger;
+lTempo.Caption:= IntToStr(Tempo);
+Jogada:= qsReplay.Fields[0].AsInteger;
+lJogada.Caption:= IntToStr(Jogada); }
+end;
+
+procedure TForm1.bPararClick(Sender: TObject);
+begin
+   if tReplay.Enabled = true then
+   begin
+      tReplay.Enabled:= false;
+      bParar.Caption:= 'Continuar';
+   end
+   else
+   begin
+   tReplay.Enabled:= true;
+   bParar.Caption:= 'Parar';
+   end;
+end;
+
+procedure TForm1.LerResultado();
+begin
+qsResultado.SQL.Text:= 'SELECT resultado FROM partidas ' +
+                    'WHERE codpart = '+Valor+'';
+qsResultado.Open();
+Resultado := qsResultado.Fields[0].AsString;
+end;
+
+procedure TForm1.LerJogada();
+begin
+qsReplay.SQL.Text:= 'SELECT jogada, tempo, vez FROM jogadas ' +
+                    'WHERE codpart = '+Valor+' order by 2';
+qsReplay.Open;
+end;
+
+procedure TForm1.tReplayTimer(Sender: TObject);
+var  seg, min, conts, contm: integer;
+begin
+   if Tempo = decafix then
+   begin
+   ExecJogada();
+   end;
+decafix:= decafix + 100;
+decacont:= decacont + 100;
+lbsegfix.Caption:= inttostr(decafix);
+seg := StrToInt(lbSeg.Caption);
+min := StrToInt(lbMin.Caption);
+if decacont = 1000 then
+   begin
+   decacont := 0;
+   seg:= seg+1;
+   lbSeg.Caption:= IntToStr(seg);
+   end;
+if seg = 60 then
+   begin
+   conts:= 0;
+   lbSeg.Caption:= IntToStr(conts);
+   contm:= min+1;
+   lbMin.Caption:= IntToStr(contm);
+   end;
+end;
+
+procedure TForm1.ExecJogada();
+begin
+   if Jogada = 1 then Image1.Picture:= iTurno.Picture;
+   if Jogada = 2 then Image2.Picture:= iTurno.Picture;
+   if Jogada = 3 then Image3.Picture:= iTurno.Picture;
+   if Jogada = 4 then Image4.Picture:= iTurno.Picture;
+   if Jogada = 5 then Image5.Picture:= iTurno.Picture;
+   if Jogada = 6 then Image6.Picture:= iTurno.Picture;
+   if Jogada = 7 then Image7.Picture:= iTurno.Picture;
+   if Jogada = 8 then Image8.Picture:= iTurno.Picture;
+   if Jogada = 9 then Image9.Picture:= iTurno.Picture;
+   if qsReplay.Eof then
+      begin
+      showmessage('acabou');
+      end
+   else
+      qsReplay.Next;
+
+   Tempo:= qsReplay.Fields[1].AsInteger;
+   lTempo.Caption:= IntToStr(Tempo);
+   Jogada:= qsReplay.Fields[0].AsInteger;
+   lJogada.Caption:= InttoStr(Jogada);
+   PassaTurnoReplay();
+   end;
+
+procedure TForm1.ReplayJogo();
+var jogadaAnterior: integer;
+begin
+   qsReplay.first;
+   jogadaAnterior:= 0;
+   while not qsReplay.Eof do
+      begin
+      Sleep((qsReplay.FieldByName('tempo').AsInteger) - (jogadaAnterior));
+      TImage(FindComponent('image'+qsReplay.FieldByName('jogada').AsString)).Picture := TImage(FindComponent('i'+qsReplay.FieldByName('vez').AsString)).Picture;
+      TImage(FindComponent('image'+qsReplay.FieldByName('jogada').AsString)).Update;
+      jogadaAnterior :=  qsReplay.FieldByName('tempo').AsInteger;
+      qsReplay.Next;
+      end;
+end;
+
+end.
